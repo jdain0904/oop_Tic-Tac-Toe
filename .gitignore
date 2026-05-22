@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 models/
+.venv/
+.idea/
+data/

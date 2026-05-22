@@ -539,6 +539,14 @@ def index():
 # 서버 실행
 # =============================================================================
 
+def main():
+    port = int(os.environ.get("PORT", 5000))  # PORT 환경변수가 있으면 그 값을 쓰고, 없으면 5000을 사용
+    app.run(
+        host="0.0.0.0",  # 외부 접속 허용
+        port=port,       # Render가 포트를 주면 그걸로, 아니면 5000으로
+        debug=False,
+    )
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    main()
