@@ -19,6 +19,7 @@
 #   - 환경(environment.py)과 에이전트(agent.py) 역할을 분리해 각자 독립 테스트가 가능합니다.
 # =============================================================================
 
+import gzip
 import pickle
 import random
 import os
@@ -124,20 +125,20 @@ class QLearningAgent:
     # pickle 은 파이썬 객체를 그대로 파일에 쓰는 직렬화 방식입니다.
     # ─────────────────────────────────────────────────────────────────────────
     def save(self, path: str):
-        """Q-테이블과 epsilon 을 pkl 파일로 저장합니다."""
+        """Q-테이블과 epsilon 을 gzip 압축 pkl 파일로 저장합니다."""
         dir_name = os.path.dirname(path)
         if dir_name:
             os.makedirs(dir_name, exist_ok=True)
-        with open(path, "wb") as f:
+        with gzip.open(path, "wb", compresslevel=9) as f:
             pickle.dump({"q_table": self.q_table, "epsilon": self.epsilon}, f)
         print(f"[{self.name}] 모델 저장 완료 → {path}")
 
     def load(self, path: str):
-        """저장된 pkl 파일에서 Q-테이블과 epsilon 을 불러옵니다."""
+        """저장된 gzip 압축 pkl 파일에서 Q-테이블과 epsilon 을 불러옵니다."""
         if not os.path.exists(path):
             print(f"[{self.name}] 저장 파일 없음 — 처음부터 학습합니다.")
             return
-        with open(path, "rb") as f:
+        with gzip.open(path, "rb") as f:
             data = pickle.load(f)
         self.q_table = data["q_table"]
         self.epsilon = data["epsilon"]

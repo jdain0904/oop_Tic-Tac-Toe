@@ -55,8 +55,8 @@ REWARD_INVALID = -0.5
 
 # ── 모델 저장 경로 ────────────────────────────────────────────────────────
 MODEL_DIR    = "models"
-MODEL_PATH_O = f"{MODEL_DIR}/agent_O.pkl"
-MODEL_PATH_X = f"{MODEL_DIR}/agent_X.pkl"
+MODEL_PATH_O = f"{MODEL_DIR}/agent_O.pkl.gz"
+MODEL_PATH_X = f"{MODEL_DIR}/agent_X.pkl.gz"
 
 # ── 로그·출력 주기 ────────────────────────────────────────────────────────
 # LOG_INTERVAL 판마다 훈련 통계와 epsilon=0 실력 평가를 함께 출력합니다.
