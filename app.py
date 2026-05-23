@@ -33,7 +33,7 @@ sessions: dict[str, dict] = {}
 # 시작 시 모델 로딩 / 학습
 # =============================================================================
 
-QUICK_EPISODES = int(os.environ.get("TRAIN_EPISODES", "100000"))
+QUICK_EPISODES = int(os.environ.get("TRAIN_EPISODES", "200000"))
 _UPDATE_INTERVAL = max(1, QUICK_EPISODES // 500)  # 500번 업데이트
 
 
