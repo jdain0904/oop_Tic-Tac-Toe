@@ -46,8 +46,8 @@ def _quick_train():
     train_status["episode"] = 0
 
     env = TicTacToeEnv()
-    ao = QLearningAgent("O")
-    ax = QLearningAgent("X")
+    ao = agent_o if agent_o is not None else QLearningAgent("O")
+    ax = agent_x if agent_x is not None else QLearningAgent("X")
 
     for ep in range(1, QUICK_EPISODES + 1):
         run_episode(env, ao, ax)
