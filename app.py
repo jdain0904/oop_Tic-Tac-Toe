@@ -566,7 +566,7 @@ function finishGame(winner) {
 }
 
 async function retrain() {
-  if (!confirm('다시 학습하면 현재 AI가 초기화됩니다. 계속할까요?')) return;
+  if (!confirm('현재 AI에 추가로 학습합니다. 계속할까요?')) return;
   trainStart = null;
   await fetch('/api/retrain', { method: 'POST' });
   checkReady();
