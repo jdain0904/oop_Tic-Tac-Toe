@@ -61,6 +61,8 @@ def _quick_train():
     ao.save(config.MODEL_PATH_O)
     ax.save(config.MODEL_PATH_X)
 
+    ao.epsilon = 0.0
+    ax.epsilon = 0.0
     agent_o = ao
     agent_x = ax
     agents_ready = True
