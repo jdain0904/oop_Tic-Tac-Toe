@@ -34,7 +34,7 @@ sessions: dict[str, dict] = {}
 # =============================================================================
 
 QUICK_EPISODES = int(os.environ.get("TRAIN_EPISODES", "100000"))
-_UPDATE_INTERVAL = max(1, QUICK_EPISODES // 200)  # 200번 업데이트
+_UPDATE_INTERVAL = max(1, QUICK_EPISODES // 500)  # 500번 업데이트
 
 
 def _quick_train():
@@ -56,6 +56,7 @@ def _quick_train():
 
         if ep % _UPDATE_INTERVAL == 0:
             train_status["episode"] = ep
+            time.sleep(0)  # GIL 양보 — Flask 응답 지연 방지
 
     ao.save(config.MODEL_PATH_O)
     ax.save(config.MODEL_PATH_X)
@@ -450,7 +451,7 @@ async function checkReady() {
       statusEl.textContent = `🧠 AI 학습 중... ${d.episode.toLocaleString()} / ${d.total.toLocaleString()} (${pct}%)${elapsedStr()}`;
       progressWrap.style.display = 'block';
       progressBar.style.width = pct + '%';
-      setTimeout(checkReady, 1000);
+      setTimeout(checkReady, 500);
     } else {
       statusEl.classList.add('pulsing');
       statusEl.textContent = '⏳ AI 초기화 중...';
