@@ -111,6 +111,17 @@ def api_train_status():
     })
 
 
+@app.route("/api/retrain", methods=["POST"])
+def api_retrain():
+    global agent_o, agent_x, agents_ready
+    if train_status["running"]:
+        return jsonify({"error": "이미 학습 중입니다."}), 400
+    agents_ready = False
+    train_status["done"] = False
+    threading.Thread(target=_quick_train, daemon=True).start()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/new_game", methods=["POST"])
 def api_new_game():
     """새 게임 세션을 생성합니다. robot_side: 'O' 또는 'X'"""
@@ -244,20 +255,38 @@ HTML = r"""<!DOCTYPE html>
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 20px;
+    padding: 32px 20px;
+    gap: 24px;
   }
-  h1 { font-size: 1.8rem; margin-bottom: 6px; color: #38bdf8; }
-  .subtitle { color: #94a3b8; margin-bottom: 24px; font-size: 0.9rem; }
+  h1 { font-size: 1.8rem; color: #38bdf8; }
 
-  #status-bar {
+  .section {
     background: #1e293b;
     border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 10px 20px;
-    margin-bottom: 20px;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: #38bdf8;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 10px;
+  }
+
+  #status-bar {
     text-align: center;
-    min-width: 320px;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+  }
+
+  .notice {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-align: center;
+    margin-top: 12px;
   }
 
   .controls {
@@ -275,7 +304,7 @@ HTML = r"""<!DOCTYPE html>
     font-size: 0.95rem;
     cursor: pointer;
   }
-  select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+  select { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
   button {
     background: #0284c7;
     color: white;
@@ -284,16 +313,18 @@ HTML = r"""<!DOCTYPE html>
   }
   button:hover { background: #0369a1; }
   button:disabled { background: #334155; cursor: not-allowed; }
+  #btn-retrain { background: #4f46e5; }
+  #btn-retrain:hover { background: #4338ca; }
 
   #board {
     display: grid;
     grid-template-columns: repeat(4, 80px);
     grid-template-rows: repeat(4, 80px);
     gap: 4px;
-    margin-bottom: 20px;
+    margin: 0 auto 20px;
   }
   .cell {
-    background: #1e293b;
+    background: #0f172a;
     border: 2px solid #334155;
     border-radius: 8px;
     display: flex;
@@ -337,11 +368,10 @@ HTML = r"""<!DOCTYPE html>
   .result-draw { color: #94a3b8 !important; }
 
   #progress-wrap {
-    width: 320px;
-    background: #1e293b;
+    background: #0f172a;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   #progress-bar {
     height: 8px;
@@ -358,25 +388,34 @@ HTML = r"""<!DOCTYPE html>
 </head>
 <body>
 <h1>4×4 틱택토 AI</h1>
-<p class="subtitle">Q-러닝으로 학습한 AI와 대전하세요</p>
 
-<div id="status-bar">⏳ AI 준비 중...</div>
-
-<div id="progress-wrap" style="display:none">
-  <div id="progress-bar"></div>
+<!-- 섹션 1: 학습시키기 -->
+<div class="section">
+  <h2>🧠 학습시키기</h2>
+  <div id="status-bar">⏳ AI 준비 중...</div>
+  <div id="progress-wrap" style="display:none">
+    <div id="progress-bar"></div>
+  </div>
+  <div style="text-align:center; margin-top:12px;">
+    <button id="btn-retrain" onclick="retrain()" disabled>다시 학습하기</button>
+  </div>
+  <p class="notice">⚠️ 학습 결과는 새로고침 전까지만 유지됩니다</p>
 </div>
 
-<div class="controls">
-  <label>내가 두는 말:</label>
-  <select id="human-side">
-    <option value="X">내가 O (먼저, AI가 X)</option>
-    <option value="O">내가 X (나중에, AI가 O)</option>
-  </select>
-  <button id="btn-new" disabled onclick="newGame()">새 게임</button>
+<!-- 섹션 2: 대전하기 -->
+<div class="section">
+  <h2>🎮 대전하기</h2>
+  <div class="controls">
+    <label>내가 두는 말:</label>
+    <select id="human-side">
+      <option value="X">내가 O (먼저, AI가 X)</option>
+      <option value="O">내가 X (나중에, AI가 O)</option>
+    </select>
+    <button id="btn-new" disabled onclick="newGame()">새 게임</button>
+  </div>
+  <div id="board"></div>
+  <div id="message"></div>
 </div>
-
-<div id="board"></div>
-<div id="message"></div>
 
 <script>
 let gameId = null;
@@ -389,6 +428,7 @@ const boardEl = document.getElementById('board');
 const msgEl = document.getElementById('message');
 const statusEl = document.getElementById('status-bar');
 const btnNew = document.getElementById('btn-new');
+const btnRetrain = document.getElementById('btn-retrain');
 const progressWrap = document.getElementById('progress-wrap');
 const progressBar = document.getElementById('progress-bar');
 
@@ -439,16 +479,20 @@ async function checkReady() {
     const r = await fetch('/api/train_status');
     const d = await r.json();
     if (d.ready) {
-      statusEl.textContent = '✅ AI 준비 완료 — 새 게임을 시작하세요';
+      statusEl.textContent = '✅ 학습 완료';
       statusEl.classList.remove('pulsing');
       btnNew.disabled = false;
+      btnRetrain.disabled = false;
       progressWrap.style.display = 'none';
       boardReady = true;
     } else if (d.running) {
       if (!trainStart) trainStart = Date.now();
       statusEl.classList.add('pulsing');
+      btnRetrain.disabled = true;
+      btnNew.disabled = true;
+      boardReady = false;
       const pct = d.total > 0 ? Math.round(d.episode / d.total * 100) : 0;
-      statusEl.textContent = `🧠 AI 학습 중... ${d.episode.toLocaleString()} / ${d.total.toLocaleString()} (${pct}%)${elapsedStr()}`;
+      statusEl.textContent = `학습 중... ${d.episode.toLocaleString()} / ${d.total.toLocaleString()} (${pct}%)${elapsedStr()}`;
       progressWrap.style.display = 'block';
       progressBar.style.width = pct + '%';
       setTimeout(checkReady, 500);
@@ -519,6 +563,13 @@ function finishGame(winner) {
     msgEl.className = 'result-' + winner;
     msgEl.textContent = 'AI가 이겼습니다! 🤖';
   }
+}
+
+async function retrain() {
+  if (!confirm('다시 학습하면 현재 AI가 초기화됩니다. 계속할까요?')) return;
+  trainStart = null;
+  await fetch('/api/retrain', { method: 'POST' });
+  checkReady();
 }
 
 // ── 시작 ─────────────────────────────────────────────────────────────────
