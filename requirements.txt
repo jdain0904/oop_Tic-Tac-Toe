@@ -48,7 +48,7 @@ pillow==11.0.0
 pkginfo==1.10.0
 progress==1.6
 pydantic==2.12.5
-pydantic_core==2.33.2
+pydantic_core==2.41.5
 pydub==0.25.1
 Pygments==2.18.0
 pyloco==0.0.139
