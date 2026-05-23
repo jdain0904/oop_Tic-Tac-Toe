@@ -368,8 +368,8 @@ HTML = r"""<!DOCTYPE html>
 <div class="controls">
   <label>내가 두는 말:</label>
   <select id="human-side">
-    <option value="X">O 먼저 (AI가 O)</option>
-    <option value="O">X 나중 (AI가 X)</option>
+    <option value="X">내가 O (먼저, AI가 X)</option>
+    <option value="O">내가 X (나중에, AI가 O)</option>
   </select>
   <button id="btn-new" disabled onclick="newGame()">새 게임</button>
 </div>
